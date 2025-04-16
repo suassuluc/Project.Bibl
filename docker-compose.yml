@@ -1,0 +1,84 @@
+version: "3.7"
+services:
+  bibl_ng:
+    image: nginx:alpine
+    container_name: bibl_ng
+    restart: always
+    ports:
+      - "8088:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx:/etc/nginx/conf.d
+      - ./docker/logs/nginx:/var/log/nginx/
+    networks:
+      - bibl
+
+  bibl_php:
+    image: fapema/php:8.1-fpm
+    container_name: bibl_php
+    restart: always
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    networks:
+      - bibl
+
+  bibl_sql:
+    image: 'mysql:8.0'
+    container_name: bibl_sql
+    ports:
+      - '33065:3306'
+    environment:
+      MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
+      MYSQL_DATABASE: '${DB_DATABASE}'
+      #MYSQL_USER: '${DB_USERNAME}'
+      MYSQL_PASSWORD: '${DB_PASSWORD}'
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+    volumes:
+      - ./docker/.dbdata:/var/lib/mysql
+    networks:
+      - bibl
+
+    # queue
+  bibl_qu:
+    image: fapema/php:8.1-fpm
+    container_name: bibl_qu
+    restart: always
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    command: "php artisan queue:work"
+    depends_on:
+      - bibl_sql
+    networks:
+      - bibl
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: bibl_phpmyadmin
+    restart: always
+    ports:
+      - '8008:80'
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOST=bibl_sql
+      - PMA_USER=${DB_USERNAME}
+      - PMA_PASSWORD=${DB_PASSWORD}
+      - PMA_DATABASE=${DB_DATABASE}
+    networks:
+      - bibl
+
+  bibl_node:
+    image: node:14.16-alpine3.13
+    container_name: bibl_node
+    restart: unless-stopped
+    tty: true
+    working_dir: /opt
+    volumes:
+      - ./:/opt
+    networks:
+      - bibl
+
+networks:
+  bibl:
+    driver: bridge
