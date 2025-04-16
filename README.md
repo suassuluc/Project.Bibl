@@ -28,6 +28,7 @@ Este é um sistema de gerenciamento de biblioteca desenvolvido com **Laravel** e
    git clone https://github.com/suassuluc/Project.Bibl.git
    cd sistema-biblioteca
 2. Inicie o docker no diretorio utilizando 
-	Docker compose up
+   ```bash
+   Docker compose up
 
 
